@@ -60,63 +60,66 @@ chatgpt_chain = LLMChain(
 )
 
 def generate_image(image_description: str):
-
-  import requests
-  endpoint = 'https://api.together.xyz/v1/completions'
-  res = requests.post(endpoint, json={
-      "model": "stabilityai/stable-diffusion-xl-base-1.0",
-      "prompt": 'prompt',
-      "negative_prompt": "",
-      "width": 1024,
-      "height": 1024,
-      "steps": 40,
-      "n": 4,
-      "seed": 4868
-  }, headers={
-      "Authorization": "Bearer e259d65582550f73533932fd6ed1ed1b9046cb343ad90b097a7376bfb5ed2fdb",
-  })
-  res = res.json()
-  print(res)
-  # with open(f"{image_description}.png", "wb") as f:
-  #     f.write(base64.b64decode(response.data[0].b64_json))
+    import requests
+    # print(image_description)
+    endpoint = 'https://api.together.xyz/v1/completions'
+    res = requests.post(endpoint, json={
+        "model": "stabilityai/stable-diffusion-xl-base-1.0",
+        "prompt": image_description.strip(),
+        "negative_prompt": "Nudity, Violence, Gore, Blood, Sex, NSFW",
+        "width": 1024,
+        "height": 1024,
+        "steps": 40,
+        "n": 4,
+        "seed": 4868
+    }, headers={
+        "Authorization": "Bearer TOGETHER_API_KEY",
+    })
+    print(res)
+    res = res.json()
+    images = res['choices']
+    for idx, b64_img in enumerate(images):
+        with open(f"{image_description}_{idx}.png", "wb") as f:
+            f.write(base64.b64decode(b64_img["image_base64"]))
 
 @app.event("app_mention")
 def message_handler(body, say, logger):
     user_message = body["event"]["text"]
-    print("USER MESSAGE:", user_message)
-    # Cleaning the user_message
+    print(user_message)
+    output_channel = body['event']['channel']
     user_message = " ".join(user_message.split(" ")[1:])
     if user_message.startswith("generate-image:"):
-      prompt = "_".join(user_message.split(":")[1:])
-      # response = together.Image.create(
-      # prompt=prompt,
-      # model="stabilityai/stable-diffusion-xl-base-1.0",
-      # steps=300,
-      # )
-      # print(len(response["output"]['choices']))
-      # # Replace with your byte stream representing the image
-      # image_bytes = base64.b64decode(response['output']['choices'][0]['image_base64'])  # Binary data of your image
-
-      # # Create a BytesIO object from the byte stream
-      # # image_data = io.BytesIO(image_bytes)
-      # image = Image.open(io.BytesIO(image_bytes))
-      # image.save('output_image.png')
-      generate_image(prompt)
-      # Send the image
-      # say(blocks=[
-      #     {
-      #         "type": "image",
-      #         "image_bytes": image_bytes,
-      #         "alt_text": "Example image"
-      #     }
-      # ])
-      try:
-        client.files_upload_v2(file=f"{prompt}.png")
-      except Exception as e:
-        print(e)
+        prompt = "_".join(user_message.split(":")[1:]).strip()
+        print(prompt)
+        generate_image(prompt)
+        try:
+            # uploaded_file = client.files_upload_v2(file=f"{prompt}_{0}.png")
+            # print(len(uploaded_file['files']))
+            result = app.client.files_upload(
+            channels=output_channel,
+            initial_comment=f"Generated image: {prompt}_{0}",
+            file=f"{prompt}_{0}.png",
+        )
+            result = app.client.files_upload(
+            channels=output_channel,
+            initial_comment=f"Generated image: {prompt}_{1}",
+            file=f"{prompt}_{1}.png",
+        )
+            result = app.client.files_upload(
+            channels=output_channel,
+            initial_comment=f"Generated image: {prompt}_{2}",
+            file=f"{prompt}_{2}.png",
+        )
+            result = app.client.files_upload(
+            channels=output_channel,
+            initial_comment=f"Generated image: {prompt}_{3}",
+            file=f"{prompt}_{3}.png",
+        )
+        except Exception as e:
+            print(e)
     else:
-      response = chatgpt_chain.predict(human_input=user_message)
-      say(response)
+        response = chatgpt_chain.predict(human_input=user_message)
+        say(response)
 
 if __name__ == "__main__":
     SocketModeHandler(app, SLACK_APP_TOKEN).start()
