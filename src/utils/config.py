@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 ENDPOINT = "https://api.together.xyz/v1/completions"
-IMAGE_MODEL = "stabilityai/stable-diffusion-xl-base-1.0"
+# IMAGE_MODEL = "stabilityai/stable-diffusion-xl-base-1.0"
+IMAGE_MODEL = "stabilityai/stable-diffusion-2-1"
 NEGATIVE_PROMPT = "Nudity, Violence, Gore, Blood, Sex, NSFW"
 HEIGHT = 1024
 WIDTH = 1024
